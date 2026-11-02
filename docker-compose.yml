@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: community_connect_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: community_connect
+      MYSQL_USER: cc_user
+      MYSQL_PASSWORD: cc_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/src/config/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - cc_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend REST API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: community_connect_backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      DB_TYPE: sqlite
+      DB_HOST: mysql
+      DB_USER: cc_user
+      DB_PASSWORD: cc_password
+      DB_NAME: community_connect
+      DB_PORT: 3306
+      JWT_SECRET: super_secret_jwt_key_community_connect_2026_sr_university
+    ports:
+      - "5001:5001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - cc_network
+
+  # Frontend React SPA Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: community_connect_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - cc_network
+
+networks:
+  cc_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
