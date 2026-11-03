@@ -293,10 +293,11 @@ export const AttendanceScreen: React.FC = () => {
                               {isPresent && (
                                 <button
                                   onClick={() => handleGenerateCertificate(rec.volunteer_id)}
-                                  className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-[11px] font-semibold flex items-center gap-1"
+                                  className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 text-[11px] font-semibold flex items-center gap-1.5 shrink-0"
                                   title="Issue Certificate"
                                 >
-                                  <Award className="w-3.5 h-3.5" /> Issue Cert
+                                  <Award className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Issue Cert</span>
                                 </button>
                               )}
                             </div>

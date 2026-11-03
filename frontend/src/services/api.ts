@@ -38,12 +38,24 @@ export async function apiRequest<T = any>(endpoint: string, options: RequestInit
   return data;
 }
 
+function toQueryString(params?: Record<string, any>): string {
+  if (!params) return '';
+  const clean: Record<string, string> = {};
+  for (const [key, val] of Object.entries(params)) {
+    if (val !== undefined && val !== null && val !== '') {
+      clean[key] = String(val);
+    }
+  }
+  const str = new URLSearchParams(clean).toString();
+  return str ? `?${str}` : '';
+}
+
 // Authentication APIs
 export const authApi = {
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, role?: string) =>
     apiRequest('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, role })
     }),
   register: (payload: any) =>
     apiRequest('/auth/register', {
@@ -61,8 +73,7 @@ export const authApi = {
 // Events APIs
 export const eventsApi = {
   getAll: (params?: { category?: string; status?: string; search?: string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest(`/events?${query}`);
+    return apiRequest(`/events${toQueryString(params)}`);
   },
   getById: (id: number | string) => apiRequest(`/events/${id}`),
   getCategories: () => apiRequest('/events/categories'),
@@ -81,8 +92,7 @@ export const eventsApi = {
 // Registrations APIs
 export const registrationsApi = {
   getAll: (params?: { event_id?: number | string; status?: string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest(`/registrations?${query}`);
+    return apiRequest(`/registrations${toQueryString(params)}`);
   },
   register: (payload: { event_id: number; preferred_duty_id?: number; availability_note?: string; contact_phone?: string }) =>
     apiRequest('/registrations', { method: 'POST', body: JSON.stringify(payload) }),
@@ -98,8 +108,7 @@ export const dutiesApi = {
   create: (eventId: number | string, data: any) =>
     apiRequest(`/duties/event/${eventId}`, { method: 'POST', body: JSON.stringify(data) }),
   getAllocations: (params?: { event_id?: number | string }) => {
-    const query = new URLSearchParams(params as any).toString();
-    return apiRequest(`/duties/allocations?${query}`);
+    return apiRequest(`/duties/allocations${toQueryString(params)}`);
   },
   assign: (payload: { event_id: number; volunteer_id: number; duty_id: number; notes?: string }) =>
     apiRequest('/duties/assign', { method: 'POST', body: JSON.stringify(payload) }),
@@ -136,16 +145,13 @@ export const certificatesApi = {
 export const reportsApi = {
   getDashboardMetrics: () => apiRequest('/reports/dashboard-metrics'),
   getEventParticipation: (params?: any) => {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`/reports/event-participation?${query}`);
+    return apiRequest(`/reports/event-participation${toQueryString(params)}`);
   },
   getVolunteerAllocation: (params?: any) => {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`/reports/volunteer-allocation?${query}`);
+    return apiRequest(`/reports/volunteer-allocation${toQueryString(params)}`);
   },
   getAttendanceReport: (params?: any) => {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`/reports/attendance-report?${query}`);
+    return apiRequest(`/reports/attendance-report${toQueryString(params)}`);
   },
   getEventCompletion: () => apiRequest('/reports/event-completion')
 };
@@ -153,8 +159,7 @@ export const reportsApi = {
 // Users APIs
 export const usersApi = {
   getAll: (params?: any) => {
-    const query = new URLSearchParams(params).toString();
-    return apiRequest(`/users?${query}`);
+    return apiRequest(`/users${toQueryString(params)}`);
   },
   getByRole: (role: string) => apiRequest(`/users/by-role/${role}`),
   update: (id: number | string, data: any) =>

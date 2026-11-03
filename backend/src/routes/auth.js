@@ -27,9 +27,10 @@ router.post('/register', async (req, res) => {
     const roleId = roleRow ? roleRow.id : 3; // default volunteer
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    // All new public registrations are placed into 'pending' status awaiting Admin approval
     const result = await query(`
       INSERT INTO users (role_id, name, email, password, phone, avatar_url, status)
-      VALUES (?, ?, ?, ?, ?, ?, 'active')
+      VALUES (?, ?, ?, ?, ?, ?, 'pending')
     `, [
       roleId,
       name.trim(),
@@ -53,20 +54,27 @@ router.post('/register', async (req, res) => {
     await query(`
       INSERT INTO activity_logs (user_id, action, details)
       VALUES (?, 'USER_REGISTERED', ?)
-    `, [newUserId, `Registered as ${role}`]);
+    `, [newUserId, `Registered as ${role} (pending admin approval)`]);
 
-    // Generate JWT token
-    const token = jwt.sign({ id: newUserId, role }, JWT_SECRET, { expiresIn: '7d' });
+    // Send notification to all Administrators
+    const admins = await query('SELECT id FROM users WHERE role_id = 1');
+    for (const admin of admins) {
+      await query(`
+        INSERT INTO notifications (user_id, title, message, type)
+        VALUES (?, 'New Account Approval Required', ?, 'alert')
+      `, [admin.id, `${name.trim()} has registered as ${role} and is awaiting administrative approval.`]);
+    }
 
     return res.status(201).json({
       success: true,
-      message: 'Account registered successfully.',
-      token,
+      pendingApproval: true,
+      message: 'Registration submitted! Your account is pending administrator approval before you can sign in.',
       user: {
         id: newUserId,
         name: name.trim(),
         email: email.toLowerCase().trim(),
         role,
+        status: 'pending',
         avatar_url: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`
       }
     });
@@ -79,7 +87,7 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role: expectedRole } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide both email and password.' });
@@ -93,16 +101,49 @@ router.post('/login', async (req, res) => {
     `, [email.toLowerCase().trim()]);
 
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password credentials.' });
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found. No active user is registered with this email address.'
+      });
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password credentials.' });
+      return res.status(401).json({
+        success: false,
+        message: 'Incorrect password. Please check your credentials and try again.'
+      });
+    }
+
+    if (user.status === 'pending') {
+      return res.status(403).json({
+        success: false,
+        message: 'Account Pending Approval: Your account registration is awaiting review by an Administrator. Please wait for an Admin to approve your account before signing in.'
+      });
     }
 
     if (user.status !== 'active') {
-      return res.status(403).json({ success: false, message: 'Account has been disabled or is pending review.' });
+      return res.status(403).json({
+        success: false,
+        message: 'Account Inactive: This account is currently suspended or inactive. Please contact an Administrator.'
+      });
+    }
+
+    // Role-based authorization check: prevent logging in under an incompatible role portal
+    if (expectedRole && user.role.toLowerCase() !== expectedRole.toLowerCase()) {
+      const roleLabels = {
+        admin: 'Administrator',
+        organizer: 'Event Organizer',
+        coordinator: 'Field Coordinator',
+        volunteer: 'Volunteer'
+      };
+      const actualLabel = roleLabels[user.role.toLowerCase()] || user.role;
+      const expectedLabel = roleLabels[expectedRole.toLowerCase()] || expectedRole;
+
+      return res.status(403).json({
+        success: false,
+        message: `Access Denied: This account is registered as ${actualLabel}, not ${expectedLabel}. Please select ${actualLabel} to sign in.`
+      });
     }
 
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });

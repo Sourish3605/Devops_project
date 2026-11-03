@@ -13,6 +13,8 @@ import { AttendanceScreen } from './components/screens/AttendanceScreen';
 import { CertificatesScreen } from './components/screens/CertificatesScreen';
 import { ReportsScreen } from './components/screens/ReportsScreen';
 import { ProfileScreen } from './components/screens/ProfileScreen';
+import { UsersManagementScreen } from './components/screens/UsersManagementScreen';
+import { BrandedLoadingScreen } from './components/common/BrandedLoadingScreen';
 
 const MainApp: React.FC = () => {
   const { user, loading } = useAuth();
@@ -20,14 +22,7 @@ const MainApp: React.FC = () => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-semibold text-white">Connecting to CommunityConnect System...</p>
-        </div>
-      </div>
-    );
+    return <BrandedLoadingScreen />;
   }
 
   if (!user) {
@@ -36,6 +31,7 @@ const MainApp: React.FC = () => {
 
   const titles: Record<string, string> = {
     dashboard: `${user.role.toUpperCase()} Analytics Dashboard`,
+    users: 'Institutional User Governance & Permissions',
     events: 'Community Events Catalog & Management',
     registrations: 'Volunteer Registrations & Statuses',
     allocations: 'Duty Allocation & Task Station Assignments',
@@ -76,6 +72,7 @@ const MainApp: React.FC = () => {
 
         <main className="flex-1 overflow-y-auto">
           {currentTab === 'dashboard' && <DashboardScreen onNavigate={tab => setCurrentTab(tab)} />}
+          {currentTab === 'users' && <UsersManagementScreen />}
           {currentTab === 'events' && <EventsScreen />}
           {currentTab === 'registrations' && <RegistrationsScreen />}
           {currentTab === 'allocations' && <DutyAllocationScreen />}

@@ -20,17 +20,17 @@ router.get('/', authenticateToken, authorizeRoles('admin'), async (req, res) => 
     `;
     const params = [];
 
-    if (role) {
+    if (role && role !== 'undefined' && role.trim() !== '') {
       sql += ' AND r.name = ?';
-      params.push(role);
+      params.push(role.trim());
     }
-    if (status) {
+    if (status && status !== 'undefined' && status.trim() !== '') {
       sql += ' AND u.status = ?';
-      params.push(status);
+      params.push(status.trim());
     }
-    if (search) {
+    if (search && search !== 'undefined' && search.trim() !== '') {
       sql += ' AND (u.name LIKE ? OR u.email LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      params.push(`%${search.trim()}%`, `%${search.trim()}%`);
     }
 
     sql += ' ORDER BY u.created_at DESC';
@@ -74,6 +74,13 @@ router.patch('/:id', authenticateToken, authorizeRoles('admin'), async (req, res
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `, [status, role_id, id]);
+
+    if (status === 'active') {
+      await query(`
+        INSERT INTO notifications (user_id, title, message, type)
+        VALUES (?, 'Account Approved', 'Your account has been approved by the Administrator. You now have full access to the platform.', 'success')
+      `, [id]);
+    }
 
     return res.json({ success: true, message: 'User updated successfully.' });
   } catch (err) {
