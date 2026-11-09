@@ -132,7 +132,7 @@ export const CertificatesScreen: React.FC = () => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(30, 41, 59);
-    doc.text('Dr. Rajesh Sharma', width - 60, 156, { align: 'center' });
+    doc.text('Narendrula Sourish', width - 60, 156, { align: 'center' });
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
@@ -315,7 +315,7 @@ export const CertificatesScreen: React.FC = () => {
                   <p>DATE: {previewCert.issue_date}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Dr. Rajesh Sharma</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Narendrula Sourish</p>
                   <p className="text-[10px] text-slate-400">{previewCert.signature_title}</p>
                 </div>
               </div>

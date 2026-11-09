@@ -220,7 +220,7 @@ export async function seedDatabase() {
     `);
 
     // 1: Admin
-    insertUser.run(1, 1, 'Dr. Rajesh Sharma (Admin)', 'admin@communityconnect.edu', hash, '+91 98765 43210', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', 'active');
+    insertUser.run(1, 1, 'Narendrula Sourish (Admin)', 'admin@communityconnect.edu', hash, '+91 98765 43210', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', 'active');
     // 2: Event Organizer
     insertUser.run(2, 2, 'Prof. Ananya Reddy (Organizer)', 'organizer@communityconnect.edu', hash, '+91 98765 43211', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150', 'active');
     // 3: Field Coordinator
